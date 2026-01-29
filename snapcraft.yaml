@@ -1,0 +1,85 @@
+name: anytype
+base: core22 
+adopt-info: anytype-ts
+summary: Official Anytype client
+description: |
+  Local-first, peer-to-peer knowledge OS. 
+  Built from source using Anytype Heart (Go) and Anytype TS (Electron).
+grade: devel
+confinement: strict
+
+apps:
+  anytype:
+    command: anytype 
+    extensions: [gnome]
+    plugs:
+      - network
+      - network-bind
+      - password-manager-service 
+      - home
+      - system-observe
+      - mount-observe
+      - password-manager-service
+
+parts:
+  anytype-heart:
+    plugin: go
+    source: https://github.com/anyproto/anytype-heart.git
+    override-pull: |
+      craftctl default
+      git fetch --tags
+      LATEST_TAG=$(git tag -l | grep -E "^v[0-9.]+$" | sort -V | tail -n 1)
+      git checkout "$LATEST_TAG"
+    build-snaps: 
+      - go/1.24/stable
+      - node/22/stable
+    build-packages:
+      - libprotoc-dev
+      - protobuf-compiler
+    override-build: |
+      # TRICK: Create the directory the Makefile expects to find
+      # We go up one level (..) because the build runs inside a subfolder
+      mkdir -p ../anytype-ts/dist/lib
+
+      make install-dev-js
+
+      mkdir -p $SNAPCRAFT_PART_INSTALL/opt/anytype-artifacts
+      
+      cp -r ../anytype-ts/dist/* $SNAPCRAFT_PART_INSTALL/opt/anytype-artifacts/
+
+  anytype-ts:
+    plugin: npm
+    source: https://github.com/anyproto/anytype-ts.git
+    npm-include-node: true
+    npm-node-version: 22.22.0 # Requirement: Node >= 20 [1]
+    after: [anytype-heart] 
+    override-pull: |
+      craftctl default
+      git fetch --tags
+      LATEST_TAG=$(git tag -l | grep -E "^v[0-9.]+$" | sort -V | tail -n 1)
+      git checkout "$LATEST_TAG"
+      VERSION=$(echo "$LATEST_TAG" | sed 's/^v//')
+      craftctl set version="$VERSION"
+    build-packages:
+      - libsecret-1-dev
+      - jq
+      - pkg-config
+      - python3
+      - build-essential
+      - libssl-dev
+    stage-packages:
+      - libsecret-1-0
+    override-build: |
+      npm ci --include=dev
+
+      ARCH="amd64"
+      if [ "$CRAFT_ARCH_BUILD_FOR" = "arm64" ]; then ARCH="arm64"; fi
+      ./update.sh ubuntu-latest $ARCH
+
+      cp -r $SNAPCRAFT_STAGE/opt/anytype-artifacts/* dist/
+
+      npm run update:locale
+      npm run dist:linux -- --linux --dir
+
+      cp -r dist/linux-unpacked/* $CRAFT_PART_INSTALL/
+

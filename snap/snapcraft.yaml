@@ -86,6 +86,9 @@ parts:
     stage-packages:
       - libsecret-1-0
     override-build: |
+      # Added to remove the default check for the protocol. This does not work for my snap package. If someone knows how to fix this please help. 
+      sed -i 's/app.setAsDefaultProtocolClient/console.log/g' electron.js
+
       npm ci --include=dev
 
       ARCH="amd64"

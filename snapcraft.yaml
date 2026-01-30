@@ -1,6 +1,7 @@
-name: anytype
+name: anytype-ar
 base: core22 
 adopt-info: anytype-ts
+icon: snap/gui/icon.png
 summary: Official Anytype client
 description: |
   Local-first, peer-to-peer knowledge OS. 

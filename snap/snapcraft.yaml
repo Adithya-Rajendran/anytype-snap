@@ -1,16 +1,24 @@
-name: anytype
+name: adithya-anytype
 base: core22 
 adopt-info: anytype-ts
 icon: snap/gui/icon.png
 summary: Unofficial Anytype client
+website: https://anytype.io 
+source-code: https://github.com/Adithya-Rajendran/anytype-snap
 description: |
   Local-first, peer-to-peer knowledge OS. 
+  
+  This is an UNOFFICIAL build. 
+  
+  - Upstream Source: https://github.com/anyproto/anytype-ts
+  - Snap Build Source: https://github.com/Adithya-Rajendran/anytype-snap
+  
   Built from source using Anytype Heart (Go) and Anytype TS (Electron).
-grade: devel
+grade: stable
 confinement: strict
 
 apps:
-  anytype:
+  adithya-anytype:
     command: anytype 
     extensions: [gnome]
     plugs:
@@ -51,8 +59,9 @@ parts:
   anytype-ts:
     plugin: npm
     source: https://github.com/anyproto/anytype-ts.git
-    npm-include-node: true
-    npm-node-version: 22.22.0 # Requirement: Node >= 20 [1]
+    build-snaps: 
+      - go/1.24/stable
+      - node/22/stable
     after: [anytype-heart] 
     override-pull: |
       craftctl default

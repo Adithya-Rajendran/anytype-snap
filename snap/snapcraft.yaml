@@ -24,7 +24,7 @@ confinement: strict
 
 apps:
   adithya-anytype:
-    command: anytype 
+    command: anytype --no-sandbox
     extensions: [gnome]
     plugs:
       - network

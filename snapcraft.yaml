@@ -1,8 +1,8 @@
-name: anytype-ar
+name: anytype
 base: core22 
 adopt-info: anytype-ts
 icon: snap/gui/icon.png
-summary: Official Anytype client
+summary: Unofficial Anytype client
 description: |
   Local-first, peer-to-peer knowledge OS. 
   Built from source using Anytype Heart (Go) and Anytype TS (Electron).

@@ -4,7 +4,7 @@ adopt-info: anytype-ts
 title: Anytype (Unofficial)
 contact: https://github.com/Adithya-Rajendran/anytype-snap
 issues: https://github.com/Adithya-Rajendran/anytype-snap/issues 
-license: 0BSD
+license: Proprietary
 donation: https://github.com/sponsors/Adithya-Rajendran
 icon: snap/gui/icon.png
 summary: Unofficial Anytype client

@@ -82,21 +82,21 @@ parts:
       - python3-setuptools
       - build-essential
       - libssl-dev
+      - libsecret-1-dev
     stage-packages:
       - libsecret-1-0
     override-build: |
       # Added to remove the default check for the protocol. This does not work for my snap package. If someone knows how to fix this please help.
       sed -i 's/app.setAsDefaultProtocolClient/console.log/g' electron.js
 
-      npm ci --include=dev
+      npm install --save-dev webpack-cli --legacy-peer-deps
+      npm run update:locale
+      npm run build:deps
 
-      ARCH="amd64"
-      if [ "$CRAFT_ARCH_BUILD_FOR" = "arm64" ]; then ARCH="arm64"; fi
-      ./update.sh ubuntu-latest $ARCH
+      ./update.sh ubuntu-latest $CRAFT_ARCH_BUILD_FOR
 
       cp -r $SNAPCRAFT_STAGE/opt/anytype-artifacts/* dist/
 
-      npm run update:locale
       npm run dist:linux -- --linux --dir
 
       cp -r dist/linux-unpacked/* $CRAFT_PART_INSTALL/

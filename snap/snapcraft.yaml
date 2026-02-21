@@ -1,41 +1,42 @@
 name: adithya-anytype
-base: core22 
+base: core24
 adopt-info: anytype-ts
 title: Anytype (Unofficial)
 contact: https://github.com/Adithya-Rajendran/anytype-snap
-issues: https://github.com/Adithya-Rajendran/anytype-snap/issues 
+issues: https://github.com/Adithya-Rajendran/anytype-snap/issues
 license: Proprietary
-donation: https://github.com/sponsors/Adithya-Rajendran
 icon: snap/gui/icon.png
 summary: Unofficial Anytype client
-website: https://anytype.io 
+website: https://anytype.io
 source-code: https://github.com/Adithya-Rajendran/anytype-snap
 description: |
-  Local-first, peer-to-peer knowledge OS. 
-  
-  This is an UNOFFICIAL build. 
-  
+  Local-first, peer-to-peer knowledge OS.
+
+  This is an UNOFFICIAL build.
+
   - Upstream Source: https://github.com/anyproto/anytype-ts
   - Snap Build Source: https://github.com/Adithya-Rajendran/anytype-snap
-  
+
   Built from source using Anytype Heart (Go) and Anytype TS (Electron).
 grade: stable
 confinement: strict
 
-architectures:
-  - build-on: amd64
-    build-for: amd64
-  - build-on: [amd64, arm64]
-    build-for: arm64
+platforms:
+  amd64:
+  arm64:
+    build-on: [amd64, arm64]
+    build-for: [arm64]
 
 apps:
   adithya-anytype:
     command: anytype --no-sandbox
+    desktop: usr/share/applications/adithya-anytype.desktop
     extensions: [gnome]
     plugs:
+      - desktop
       - network
       - network-bind
-      - password-manager-service 
+      - password-manager-service
       - home
       - system-observe
       - mount-observe
@@ -50,7 +51,7 @@ parts:
       git fetch --tags
       LATEST_TAG=$(git tag -l | grep -E "^v[0-9.]+$" | sort -V | tail -n 1)
       git checkout "$LATEST_TAG"
-    build-snaps: 
+    build-snaps:
       - go/1.24/stable
       - node/22/stable
     build-packages:
@@ -64,16 +65,16 @@ parts:
       make install-dev-js
 
       mkdir -p $SNAPCRAFT_PART_INSTALL/opt/anytype-artifacts
-      
+
       cp -r ../anytype-ts/dist/* $SNAPCRAFT_PART_INSTALL/opt/anytype-artifacts/
 
   anytype-ts:
     plugin: npm
     source: https://github.com/anyproto/anytype-ts.git
-    build-snaps: 
+    build-snaps:
       - go/1.24/stable
       - node/22/stable
-    after: [anytype-heart] 
+    after: [anytype-heart]
     override-pull: |
       craftctl default
       git fetch --tags
@@ -86,12 +87,13 @@ parts:
       - jq
       - pkg-config
       - python3
+      - python3-setuptools
       - build-essential
       - libssl-dev
     stage-packages:
       - libsecret-1-0
     override-build: |
-      # Added to remove the default check for the protocol. This does not work for my snap package. If someone knows how to fix this please help. 
+      # Added to remove the default check for the protocol. This does not work for my snap package. If someone knows how to fix this please help.
       sed -i 's/app.setAsDefaultProtocolClient/console.log/g' electron.js
 
       npm ci --include=dev
@@ -107,3 +109,14 @@ parts:
 
       cp -r dist/linux-unpacked/* $CRAFT_PART_INSTALL/
 
+      # Create the standard applications directory
+      mkdir -p $CRAFT_PART_INSTALL/usr/share/applications/
+
+      # Renaming it to 'adithya-anytype.desktop' avoids conflicts with other sources
+      cp anytype.desktop $CRAFT_PART_INSTALL/usr/share/applications/adithya-anytype.desktop
+
+      # Point it to the icon located in snap/gui/icon.png (which lands in meta/gui/)
+      sed -i 's|^Icon=.*|Icon=${SNAP}/meta/gui/icon.png|' $CRAFT_PART_INSTALL/usr/share/applications/adithya-anytype.desktop
+
+      # Update the Exec to launch the snap. We have to do this because this is an unofficial snap.
+      sed -i 's|^Exec=.*|Exec=adithya-anytype %U|' $CRAFT_PART_INSTALL/usr/share/applications/adithya-anytype.desktop

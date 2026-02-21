@@ -3,11 +3,9 @@ name: Build and Publish Anytype Snap
 on:
   push:
     branches: [main, master]
-  pull_request:
-    branches: [main, master]
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 0 * * 6" # 4 PM PST Fri
 
 jobs:
   build:
@@ -29,8 +27,11 @@ jobs:
       - name: Resolve and Inject Source Versions
         run: |
           # Fetch the latest stable tags from the GitHub API
-          TS_VERSION=$(curl -s https://api.github.com/repos/anyproto/anytype-ts/releases/latest | jq -r .tag_name)
-          HEART_VERSION=$(curl -s https://api.github.com/repos/anyproto/anytype-heart/releases/latest | jq -r .tag_name)
+          TS_VERSION=$(curl -s https://api.github.com/repos/anyproto/anytype-ts/releases | \
+                      jq -r '.[] | .tag_name | select(test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))' | head -n 1)
+
+          HEART_VERSION=$(curl -s https://api.github.com/repos/anyproto/anytype-heart/releases | \
+                      jq -r '.[] | .tag_name | select(test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))' | head -n 1)
 
           # Safety Check: Ensure the versions aren't null or empty before continuing
           if [[ -z "$TS_VERSION" || "$TS_VERSION" == "null" || -z "$HEART_VERSION" || "$HEART_VERSION" == "null" ]]; then

@@ -24,8 +24,6 @@ confinement: strict
 platforms:
   amd64:
   arm64:
-    build-on: [amd64, arm64]
-    build-for: [arm64]
 
 apps:
   adithya-anytype:
@@ -46,11 +44,8 @@ parts:
   anytype-heart:
     plugin: go
     source: https://github.com/anyproto/anytype-heart.git
-    override-pull: |
-      craftctl default
-      git fetch --tags
-      LATEST_TAG=$(git tag -l | grep -E "^v[0-9.]+$" | sort -V | tail -n 1)
-      git checkout "$LATEST_TAG"
+    source-type: git
+    source-tag: __HEART_VERSION__
     build-snaps:
       - go/1.24/stable
       - node/22/stable
@@ -71,17 +66,12 @@ parts:
   anytype-ts:
     plugin: npm
     source: https://github.com/anyproto/anytype-ts.git
+    source-type: git
+    source-tag: __TS_VERSION__
     build-snaps:
       - go/1.24/stable
       - node/22/stable
     after: [anytype-heart]
-    override-pull: |
-      craftctl default
-      git fetch --tags
-      LATEST_TAG=$(git tag -l | grep -E "^v[0-9.]+$" | sort -V | tail -n 1)
-      git checkout "$LATEST_TAG"
-      VERSION=$(echo "$LATEST_TAG" | sed 's/^v//')
-      craftctl set version="$VERSION"
     build-packages:
       - libsecret-1-dev
       - jq

@@ -47,11 +47,8 @@ jobs:
       - name: Build snap
         uses: snapcore/action-build@v1
         id: build
-        with:
-          build-args: --build-for=${{ matrix.architecture }}
 
       - name: Review snap
-        if: steps.check.outputs.should_create_pr == 'true' && steps.check_pr.outputs.pr_exists == 'false'
         uses: diddlesnaps/snapcraft-review-action@v1
         with:
           snap: ${{ steps.build.outputs.snap }}

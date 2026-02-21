@@ -49,7 +49,7 @@ parts:
     source-depth: 1
     build-snaps:
       - go/1.24/stable
-      - node/22/stable
+      - node/24/stable
     build-packages:
       - libprotoc-dev
       - protobuf-compiler
@@ -72,7 +72,7 @@ parts:
     source-depth: 1
     build-snaps:
       - go/1.24/stable
-      - node/22/stable
+      - node/24/stable
     after: [anytype-heart]
     build-packages:
       - libsecret-1-dev

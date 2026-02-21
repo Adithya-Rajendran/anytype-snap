@@ -1,6 +1,6 @@
 name: adithya-anytype
 base: core24
-adopt-info: anytype-ts
+version: __SNAP_VERSION__
 title: Anytype (Unofficial)
 contact: https://github.com/Adithya-Rajendran/anytype-snap
 issues: https://github.com/Adithya-Rajendran/anytype-snap/issues
@@ -46,6 +46,7 @@ parts:
     source: https://github.com/anyproto/anytype-heart.git
     source-type: git
     source-tag: __HEART_VERSION__
+    source-depth: 1
     build-snaps:
       - go/1.24/stable
       - node/22/stable
@@ -68,6 +69,7 @@ parts:
     source: https://github.com/anyproto/anytype-ts.git
     source-type: git
     source-tag: __TS_VERSION__
+    source-depth: 1
     build-snaps:
       - go/1.24/stable
       - node/22/stable

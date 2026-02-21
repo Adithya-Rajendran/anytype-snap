@@ -38,9 +38,11 @@ jobs:
             exit 1
           fi
 
+          SNAP_VERSION=$(echo "$TS_VERSION" | sed 's/^v//')
           echo "Building anytype-ts $TS_VERSION against anytype-heart $HEART_VERSION"
 
           # 3. Inject the versions into source-tag in snapcraft.yaml
+          sed -i "s/__SNAP_VERSION__/$SNAP_VERSION/g" snap/snapcraft.yaml
           sed -i "s/__TS_VERSION__/$TS_VERSION/g" snap/snapcraft.yaml
           sed -i "s/__HEART_VERSION__/$HEART_VERSION/g" snap/snapcraft.yaml
 

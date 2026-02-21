@@ -56,7 +56,3 @@ Common Issues:
 - Official Website: [anytype.io](https://anytype.io/)
 - Source Code (Client): [anyproto/anytype-ts](https://github.com/anyproto/anytype-ts)
 - Source Code (Middleware): [anyproto/anytype-heart](https://github.com/anyproto/anytype-heart)
-
-## 📄 License
-
-The packaging code in this repository is open source. The Anytype application itself is licensed under the Any Source Available License 1.0.

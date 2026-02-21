@@ -1,6 +1,6 @@
 name: adithya-anytype
 base: core24
-version: __SNAP_VERSION__
+version: 0.54.2
 title: Anytype (Unofficial)
 contact: https://github.com/Adithya-Rajendran/anytype-snap
 issues: https://github.com/Adithya-Rajendran/anytype-snap/issues
@@ -45,7 +45,7 @@ parts:
     plugin: go
     source: https://github.com/anyproto/anytype-heart.git
     source-type: git
-    source-tag: __HEART_VERSION__
+    source-tag: v0.48.1
     source-depth: 1
     build-snaps:
       - go/1.24/stable
@@ -53,22 +53,53 @@ parts:
     build-packages:
       - libprotoc-dev
       - protobuf-compiler
+      - make
+      - musl-tools
     override-build: |
-      # TRICK: Create the directory the Makefile expects to find
-      # We go up one level (..) because the build runs inside a subfolder
-      mkdir -p ../anytype-ts/dist/lib
+      # Set up Go environment variables (mirrors "Setup GO" step)
+      export GOPATH=$(go env GOPATH)
+      export GOBIN=$(go env GOPATH)/bin
+      export PATH=$PATH:$GOBIN:$(pwd)/deps
 
-      make install-dev-js
+      # Set version flags
+      GIT_SUMMARY=$(git describe --tags --always 2>/dev/null || echo "v0.48.1")
+      export FLAGS="-X github.com/anyproto/anytype-heart/util/vcs.GitSummary=${GIT_SUMMARY}"
+      export BUILD_TAG_NETWORK=envproduction
+
+      go mod download
+
+      make setup-protoc
+      make setup-go
+      # skip setup-gomobile — not needed for Linux server binary
+
+      # Patch musl cross-compilers to use native gcc on Ubuntu
+      sed -i 's/x86_64-linux-musl-gcc/gcc/g' makefiles/ci-cross-compile-library.mk
+      sed -i 's/aarch64-linux-musl-gcc/gcc/g' makefiles/ci-cross-compile-library.mk
+      sed -i 's/-static //g' makefiles/ci-cross-compile-library.mk
+      sed -i 's/-extldflags=-static//g' makefiles/ci-cross-compile-library.mk
+
+      make cross-compile-library-linux-$CRAFT_ARCH_BUILD_FOR
+
+      make protos-js
+      make ci-js-protos
+
+      mkdir -p .tarball
+      cp linux-$CRAFT_ARCH_BUILD_FOR .tarball/grpc-server
+      chmod +x .tarball/grpc-server
+      cp -r protobuf  .tarball/protobuf
+      cp -r json      .tarball/json
+      # relations/ doesn't exist in v0.48.1, skip it
+
+      tar -czf anytype-heart.tar.gz -C .tarball .
 
       mkdir -p $SNAPCRAFT_PART_INSTALL/opt/anytype-artifacts
-
-      cp -r ../anytype-ts/dist/* $SNAPCRAFT_PART_INSTALL/opt/anytype-artifacts/
+      cp anytype-heart.tar.gz $SNAPCRAFT_PART_INSTALL/opt/anytype-artifacts/anytype-heart.tar.gz
 
   anytype-ts:
     plugin: npm
     source: https://github.com/anyproto/anytype-ts.git
     source-type: git
-    source-tag: __TS_VERSION__
+    source-tag: v0.54.2
     source-depth: 1
     build-snaps:
       - go/1.24/stable
@@ -88,13 +119,26 @@ parts:
       # Added to remove the default check for the protocol. This does not work for my snap package. If someone knows how to fix this please help.
       sed -i 's/app.setAsDefaultProtocolClient/console.log/g' electron.js
 
-      npm ci --include=dev
+      npm install --include=dev --legacy-peer-deps
+      npm install --include=dev webpack webpack-cli --legacy-peer-deps
 
-      ARCH="amd64"
-      if [ "$CRAFT_ARCH_BUILD_FOR" = "arm64" ]; then ARCH="arm64"; fi
-      ./update.sh ubuntu-latest $ARCH
+      cp $CRAFT_STAGE/opt/anytype-artifacts/anytype-heart.tar.gz .
 
-      cp -r $SNAPCRAFT_STAGE/opt/anytype-artifacts/* dist/
+      tar -zxf anytype-heart.tar.gz
+      mv -fv grpc-server "dist/anytypeHelper"
+
+      rm -rf dist/lib/pb
+      rm -rf dist/lib/pkg
+      rm -rf dist/lib/protos
+      rm -rf dist/lib/json/generated/*.json
+
+      mv -fv protobuf/* "dist/lib/"
+      mkdir -p dist/lib/json/generated
+      mv -fv json/* "dist/lib/json/generated"
+      rm -rf protobuf
+      rm -rf relations
+      rm -rf json
+      rm -f anytype-heart.tar.gz
 
       npm run update:locale
       npm run dist:linux -- --linux --dir

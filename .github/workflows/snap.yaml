@@ -46,7 +46,7 @@ jobs:
 
       - name: Build snap
         id: build
-        uses: canonical/action-build-snap@v1
+        uses: snapcore/action-build-snap@v1
         with:
           build-args: --build-for=${{ matrix.architecture }}
 

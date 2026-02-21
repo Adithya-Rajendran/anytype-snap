@@ -1,0 +1,67 @@
+name: Build and Publish Anytype Snap
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  build:
+    name: Build Snap (${{ matrix.architecture }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: amd64
+            runner: ubuntu-latest
+          - architecture: arm64
+            runner: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve and Inject Source Versions
+        run: |
+          # Fetch the latest stable tags from the GitHub API
+          TS_VERSION=$(curl -s https://api.github.com/repos/anyproto/anytype-ts/releases/latest | jq -r .tag_name)
+          HEART_VERSION=$(curl -s https://api.github.com/repos/anyproto/anytype-heart/releases/latest | jq -r .tag_name)
+
+          # Safety Check: Ensure the versions aren't null or empty before continuing
+          if [[ -z "$TS_VERSION" || "$TS_VERSION" == "null" || -z "$HEART_VERSION" || "$HEART_VERSION" == "null" ]]; then
+            echo "Error: Failed to fetch versions from GitHub API."
+            exit 1
+          fi
+
+          echo "Building anytype-ts $TS_VERSION against anytype-heart $HEART_VERSION"
+
+          # 3. Inject the versions into source-tag in snapcraft.yaml
+          sed -i "s/__TS_VERSION__/$TS_VERSION/g" snap/snapcraft.yaml
+          sed -i "s/__HEART_VERSION__/$HEART_VERSION/g" snap/snapcraft.yaml
+
+      - name: Build snap
+        id: build
+        uses: canonical/action-build-snap@v1
+        with:
+          build-args: --build-for=${{ matrix.architecture }}
+
+      - name: Upload snap artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: adithya-anytype-${{ matrix.architecture }}
+          path: ${{ steps.build.outputs.snap }}
+          retention-days: 7
+
+      - name: Publish snap to Store
+        uses: snapcore/action-publish@v1
+        if: github.event_name != 'pull_request'
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+        with:
+          snap: ${{ steps.build.outputs.snap }}
+          release: edge

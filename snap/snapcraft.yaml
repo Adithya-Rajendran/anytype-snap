@@ -96,7 +96,10 @@ parts:
       cp -r $SNAPCRAFT_STAGE/opt/anytype-artifacts/* dist/
 
       npm run update:locale
-      npm run dist:linux -- --linux --dir
+
+      ARCH_SUFFIX="amd"
+      [ "$CRAFT_ARCH_BUILD_FOR" = "arm64" ] && ARCH_SUFFIX="arm"
+      npm run dist:linux${ARCH_SUFFIX} -- --dir
 
       cp -r dist/linux-unpacked/* $CRAFT_PART_INSTALL/
 

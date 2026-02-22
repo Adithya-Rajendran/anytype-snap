@@ -101,7 +101,12 @@ parts:
       [ "$CRAFT_ARCH_BUILD_FOR" = "arm64" ] && ARCH_SUFFIX="arm"
       npm run dist:linux${ARCH_SUFFIX} -- --dir
 
-      cp -r dist/linux-unpacked/* $CRAFT_PART_INSTALL/
+      if [ "$CRAFT_ARCH_BUILD_FOR" = "arm64" ]; then
+        UNPACK_DIR="dist/linux-arm64-unpacked"
+      else
+        UNPACK_DIR="dist/linux-unpacked"
+      fi
+      cp -r "$UNPACK_DIR"/* $CRAFT_PART_INSTALL/
 
       # Create the standard applications directory
       mkdir -p $CRAFT_PART_INSTALL/usr/share/applications/

@@ -1,0 +1,20 @@
+#!/bin/bash
+# snap/local/bin/launcher — Anytype snap entry point
+#
+# Purpose: Detect whether the password-manager-service plug is connected
+# and set Electron's --password-store flag accordingly. This prevents the
+# logout bug caused by inconsistent encryption key backends.
+#
+# When connected:  uses gnome-libsecret (GNOME Keyring via D-Bus)
+# When disconnected: uses basic (hardcoded key — functional but less secure)
+
+if snapctl is-connected password-manager-service 2>/dev/null; then
+    PASS_STORE="gnome-libsecret"
+else
+    PASS_STORE="basic"
+fi
+
+exec "$SNAP/anytype" \
+    --no-sandbox \
+    --password-store="$PASS_STORE" \
+    "$@"

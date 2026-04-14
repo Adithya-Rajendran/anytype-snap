@@ -18,29 +18,55 @@ description: |
   - Snap Build Source: https://github.com/Adithya-Rajendran/anytype-snap
 
   Built from source using Anytype Heart (Go) and Anytype TS (Electron).
+  If you are prompted for your recovery key on every launch, connect the
+  keyring interface:
+    sudo snap connect adithya-anytype:password-manager-service
+
+  For official releases: https://anytype.io
+  Built from source: https://github.com/anyproto/anytype-ts
+  Licensed under the Any Source Available License 1.0.
 grade: stable
 confinement: strict
+
+compression: lzo
+
+assumes:
+  - snapd2.54
 
 platforms:
   amd64:
   arm64:
 
+plugs:
+  shmem:
+    interface: shared-memory
+    private: true
+
 apps:
   adithya-anytype:
-    command: anytype --no-sandbox
+    command: bin/launcher
     desktop: usr/share/applications/adithya-anytype.desktop
     extensions: [gnome]
+    environment:
+      TMPDIR: $XDG_RUNTIME_DIR
     plugs:
-      - desktop
+      - audio-playback
+      - browser-support
+      - home
       - network
       - network-bind
       - password-manager-service
-      - home
-      - system-observe
-      - mount-observe
-      - browser-support
+      - screen-inhibit-control
+      - shmem
+      - unity7
 
 parts:
+  launcher:
+    plugin: dump
+    source: snap/local/
+    organize:
+      bin/launcher: bin/launcher
+
   anytype-heart:
     plugin: go
     source: https://github.com/anyproto/anytype-heart.git
@@ -89,6 +115,9 @@ parts:
       # Added to remove the default check for the protocol. This does not work for my snap package. If someone knows how to fix this please help.
       sed -i 's/app.setAsDefaultProtocolClient/console.log/g' electron.js
 
+      ARCH_SUFFIX="amd"
+      [ "$CRAFT_ARCH_BUILD_FOR" = "arm64" ] && ARCH_SUFFIX="arm"
+
       npm ci --include=dev
 
       ./update.sh ubuntu-latest $CRAFT_ARCH_BUILD_FOR
@@ -97,8 +126,6 @@ parts:
 
       npm run update:locale
 
-      ARCH_SUFFIX="amd"
-      [ "$CRAFT_ARCH_BUILD_FOR" = "arm64" ] && ARCH_SUFFIX="arm"
       npm run dist:linux${ARCH_SUFFIX} -- --dir
 
       if [ "$CRAFT_ARCH_BUILD_FOR" = "arm64" ]; then
